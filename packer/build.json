@@ -1,0 +1,58 @@
+{
+  "variables": {
+    "aws_region": "ap-southeast-2",
+    "github_oauth_token": "{{env `GITHUB_OAUTH_TOKEN`}}"
+  },
+  "builders": [{
+    "ami_name": "sample-app-frontend-{{isotime | clean_ami_name}}",
+    "ami_description": "A sample app that shows how to package your code as an AMI using Packer.",
+    "instance_type": "t2.micro",
+    "name": "sample-app-frontend",
+    "region": "{{user `aws_region`}}",
+    "type": "amazon-ebs",
+    "source_ami_filter": {
+      "filters": {
+        "virtualization-type": "hvm",
+        "architecture": "x86_64",
+        "name": "*ubuntu-xenial-16.04-amd64-server-*",
+        "block-device-mapping.volume-type": "gp2",
+        "root-device-type": "ebs"
+      },
+      "owners": ["099720109477"],
+      "most_recent": true
+    },
+    "encrypt_boot": true,
+    "ssh_username": "ubuntu"
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "pause_before": "30s",
+    "inline": [
+      "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade"
+    ]
+  },{
+    "type": "shell",
+    "script": "{{template_dir}}/install-gruntwork-modules.sh",
+    "environment_vars": [
+      "GITHUB_OAUTH_TOKEN={{user `github_oauth_token`}}",
+      "AWS_REGION={{user `aws_region`}}",
+      "SSH_GRUNT_GROUP=ssh-grunt-users",
+      "SSH_GRUNT_SUDO_GROUP=ssh-grunt-sudo-users",
+      "EXTERNAL_ACCOUNT_SSH_GRUNT_ROLE_ARN="
+    ]
+  },{
+    "type": "shell",
+    "inline": ["mkdir -p /tmp/sample-app-frontend"]
+  },{
+    "type": "file",
+    "source": "{{template_dir}}/../",
+    "destination": "/tmp/sample-app-frontend"
+  },{
+    "type": "shell",
+    "script": "{{template_dir}}/install-app.sh",
+    "environment_vars": [
+      "APP_TMP_DIR=/tmp/sample-app-frontend",
+      "APP_OWNER=app"
+    ]
+  }]
+}
