@@ -1,0 +1,7 @@
+{
+  "name": "nodejs-sample",
+  "version": "v0.0.1",
+  "description": "A sample Node.js app",
+  "dependencies": {
+  }
+}
